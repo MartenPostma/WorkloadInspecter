@@ -106,6 +106,7 @@ class WorkLoadInspecter:
             5: 'Saturday',
             6: 'Sunday',
         }
+        self.now = datetime.now()
         self.activity2date2int, self.all_dates = self.load_data()
 
     def my_upcoming_deadlines(self):
@@ -122,7 +123,7 @@ class WorkLoadInspecter:
 
         for index, row in self.info_df.iterrows():
 
-            if not row['deadline']:
+            if type(row['deadline']) == pandas._libs.tslib.NaTType:
                 continue
 
             what = row['what']
@@ -235,6 +236,9 @@ class WorkLoadInspecter:
                                          row['to'])
 
             for date in date_range:
+
+                if date < self.now:
+                    continue
 
                 int_day = date.weekday()
                 day = self.int2day[int_day]
