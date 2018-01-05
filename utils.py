@@ -2,6 +2,7 @@ import pandas
 import seaborn as sns
 from datetime import datetime
 import matplotlib.pyplot as plt
+from collections import defaultdict
 
 
 def get_range_range(start, end, debug=False):
@@ -55,9 +56,7 @@ assert get_range_range(datetime(2018, 1, 9),
 def load_holidays(info_df):
     """
     load set of holiday identifiers
-
     :param pandas.core.frame.DataFrame info_df: all date info
-
     :rtype: set
     :return set of datetime.datetime objects
     """
@@ -79,6 +78,7 @@ class WorkLoadInspecter:
 
     :ivar str path_to_input_excel: path to excel with information
     about work and holidays (see 'resources' folder for examples)
+
     :ivar dict i_work_on: dictionary mapping every weekday to True or False
     indicating whether you work on that day, e.g.
     input_i_work_on = {
@@ -91,7 +91,6 @@ class WorkLoadInspecter:
         'Sunday': False,
     }
     """
-
     def __init__(self, path_to_input_excel,
                  i_work_on):
         self.info_df = pandas.read_excel(path_to_input_excel, sheetname='work')
@@ -107,7 +106,9 @@ class WorkLoadInspecter:
             6: 'Sunday',
         }
         self.now = datetime.now()
-        self.activity2date2int, self.all_dates = self.load_data()
+        self.activity2date2int, \
+        self.all_dates,  \
+        self.date2freq = self.load_data()
 
     def my_upcoming_deadlines(self):
         """
@@ -119,7 +120,10 @@ class WorkLoadInspecter:
         :return: df with deadline information
         """
         list_of_lists = []
-        headers = ['Activity', 'Deadline', '# working days remaining']
+        headers = ['Activity',
+                   'Deadline',
+                   '# working days remaining',
+                   'avg # of activities per day']
 
         for index, row in self.info_df.iterrows():
 
@@ -128,7 +132,14 @@ class WorkLoadInspecter:
 
             what = row['what']
             num_days_remaining = len(self.activity2date2int[what])
-            a_row = [what, row['to'], num_days_remaining]
+
+            days_with_counts = []
+            for date in self.activity2date2int[what]:
+                freq = self.date2freq[date]
+                days_with_counts.append(freq)
+
+            avg_num_activities = sum(days_with_counts) / len(days_with_counts)
+            a_row = [what, row['to'], num_days_remaining, round(avg_num_activities, 1)]
             list_of_lists.append(a_row)
 
         deadlines_df = pandas.DataFrame(list_of_lists, columns=headers)
@@ -220,11 +231,12 @@ class WorkLoadInspecter:
         sorted list of all dates
 
         :rtype: tuple
-        :return: (activity2date2int, all_dates)
+        :return: (activity2date2int, all_dates, date2freq)
         """
         holidays = load_holidays(self.holidays_df)
         activity2date2int = {}
         all_dates = set()
+        date2freq = defaultdict(int)
 
         for index, row in self.info_df.iterrows():
 
@@ -251,5 +263,6 @@ class WorkLoadInspecter:
                     continue
 
                 activity2date2int[what][date] = id_
+                date2freq[date] += 1
 
-        return activity2date2int, sorted(all_dates)
+        return activity2date2int, sorted(all_dates), date2freq
