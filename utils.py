@@ -146,47 +146,6 @@ class WorkLoadInspecter:
         sorted_deadlines_df = deadlines_df.sort_values('Deadline')
         return sorted_deadlines_df
 
-    def what_am_i_doing_during(self, from_date, to_date):
-        """
-        show activities during period from_date to_date
-
-        :param str from_date: yyyy-mm-dd 2018-1-1
-        :param str to_date: yyy-mm-dd 2018-1-3
-
-        :rtype: pandas.core.frame.DataFrame
-        :return: df with activities information
-        """
-        from_y, from_m, from_d = from_date.split('-')
-        to_y, to_m, to_d = to_date.split('-')
-
-        start = datetime(int(from_y), int(from_m), int(from_d))
-        end = datetime(int(to_y), int(to_m), int(to_d))
-
-        list_of_lists = []
-        headers = ['Activity', 'From', 'To', '# working days remaining']
-
-        for index, row in self.info_df.iterrows():
-
-            what = row['what']
-
-            if not any([start == row['from'],
-                        start > row['from']
-                        ]):
-                continue
-
-            if not any([end == row['to'],
-                        end < row['to']
-                        ]):
-                continue
-
-            num_days_remaining = len(self.activity2date2int[what])
-            a_row = [what, row['from'], row['to'], num_days_remaining]
-            list_of_lists.append(a_row)
-
-        activities_df = pandas.DataFrame(list_of_lists, columns=headers)
-        sorted_activities_df = activities_df.sort_values('To')
-        return sorted_activities_df
-
     def visualize_my_activities(self, debug=False):
         """
         visualize all activities with stripplot
